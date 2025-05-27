@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/user_model.dart';
+import '../models/admin/user_model.dart';
 import 'package:flutter/foundation.dart';
 
 class AuthService extends ChangeNotifier {
@@ -20,33 +20,35 @@ class AuthService extends ChangeNotifier {
         email: email,
         password: password,
       );
-      final User? user = result.user;
-      if (user != null) {
+      
+      if (result.user == null) {
+        throw Exception('Đăng nhập thất bại: Không thể lấy thông tin người dùng');
+      }
+
         // Get user data from Firestore
-        final doc = await _firestore.collection('users').doc(user.uid).get();
-        if (doc.exists) {
+      final doc = await _firestore.collection('users').doc(result.user!.uid).get();
+      
+      if (!doc.exists) {
+        throw Exception('Không tìm thấy thông tin người dùng trong cơ sở dữ liệu');
+      }
+
           final Map<String, dynamic>? data = doc.data();
-          if (data != null) {
-            String roleStr = data['role']?.toString() ?? 'restaurantOwner';
-            // Remove 'UserRole.' prefix if exists
-            if (roleStr.startsWith('UserRole.')) {
-              roleStr = roleStr.substring('UserRole.'.length);
-            }
+      if (data == null) {
+        throw Exception('Dữ liệu người dùng không hợp lệ');
+      }
+
+            String roleStr = data['role']?.toString() ?? 'customer';
             
             return UserModel(
-              id: user.uid,
-              email: data['email']?.toString() ?? user.email ?? '',
+        id: result.user!.uid,
+        email: data['email']?.toString() ?? result.user!.email ?? '',
               name: data['name']?.toString() ?? '',
               phoneNumber: data['phoneNumber']?.toString(),
               role: UserRole.values.firstWhere(
                 (e) => e.toString().split('.').last == roleStr,
-                orElse: () => UserRole.restaurantOwner,
+                orElse: () => UserRole.customer,
               ),
             );
-          }
-        }
-      }
-      return null;
     } on FirebaseAuthException catch (e) {
       String message;
       switch (e.code) {
@@ -63,10 +65,12 @@ class AuthService extends ChangeNotifier {
           message = 'Tài khoản này đã bị vô hiệu hóa.';
           break;
         default:
-          message = 'Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại.';
+          message = 'Đã xảy ra lỗi khi đăng nhập: ${e.message}';
       }
       throw Exception(message);
-    } catch (e) {
+    } catch (e, stack) {
+      print('Lỗi không xác định khi đăng nhập: $e');
+      print(stack);
       throw Exception('Đã xảy ra lỗi không xác định. Vui lòng thử lại sau.');
     }
   }
@@ -147,15 +151,11 @@ class AuthService extends ChangeNotifier {
         if (doc.exists) {
           final Map<String, dynamic>? data = doc.data();
           if (data != null) {
-            String roleStr = data['role']?.toString() ?? 'restaurantOwner';
-            // Remove 'UserRole.' prefix if exists
-            if (roleStr.startsWith('UserRole.')) {
-              roleStr = roleStr.substring('UserRole.'.length);
-            }
+            String roleStr = data['role']?.toString() ?? 'customer';
             
             return UserRole.values.firstWhere(
               (e) => e.toString().split('.').last == roleStr,
-              orElse: () => UserRole.restaurantOwner,
+              orElse: () => UserRole.customer,
             );
           }
         }
@@ -176,6 +176,12 @@ class AuthService extends ChangeNotifier {
   Future<bool> isRestaurantOwner() async {
     final role = await getUserRole();
     return role == UserRole.restaurantOwner;
+  }
+
+  // Check if user is customer
+  Future<bool> isCustomer() async {
+    final role = await getUserRole();
+    return role == UserRole.customer;
   }
 
   // Get user count
@@ -203,15 +209,9 @@ class AuthService extends ChangeNotifier {
   }
 
   // Lấy số lượng đơn hàng trong ngày
-  Stream<int> getTodayOrderCount() {
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final endOfDay = startOfDay.add(const Duration(days: 1));
-
+  Stream<int> getMenuCount() {
     return _firestore
-        .collection('orders')
-        .where('createdAt', isGreaterThanOrEqualTo: startOfDay)
-        .where('createdAt', isLessThan: endOfDay)
+        .collection('menu_items')
         .snapshots()
         .map((snapshot) => snapshot.docs.length);
   }

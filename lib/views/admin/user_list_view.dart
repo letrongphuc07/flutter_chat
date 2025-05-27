@@ -1,89 +1,158 @@
 import 'package:flutter/material.dart';
 import '../../controllers/admin/user_controller.dart';
-import '../../models/user_model.dart';
+import '../../models/admin/user_model.dart';
 
 class UserListView extends StatelessWidget {
-  static final UserController _userController = UserController();
+  final UserController _userController = UserController();
 
-  const UserListView({super.key});
+  UserListView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.expand(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Danh sách người dùng',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+    return Scaffold(
+      backgroundColor: const Color(0xFFF6F8FA),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Danh sách người dùng',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF222B45),
+                    ),
                   ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => _showAddUserDialog(context),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Thêm người dùng'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: StreamBuilder<List<UserModel>>(
-              stream: _userController.getUsers(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return const Center(child: Text('Có lỗi xảy ra'));
-                }
-
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('Không có người dùng nào'));
-                }
-
-                return ListView.builder(
-                  itemCount: snapshot.data!.length,
-                  itemBuilder: (context, index) {
-                    final user = snapshot.data![index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: ListTile(
-                        leading: const CircleAvatar(
-                          child: Icon(Icons.person),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showAddUserDialog(context),
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      label: const Text('Thêm', style: TextStyle(color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
                         ),
-                        title: Text(user.name),
-                        subtitle: Text(user.email),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit),
-                              onPressed: () => _showEditUserDialog(context, user),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () => _showDeleteConfirmation(context, user.id),
-                            ),
-                          ],
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        elevation: 2,
                       ),
-                    );
-                  },
-                );
-              },
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            Expanded(
+              child: StreamBuilder<List<UserModel>>(
+                stream: _userController.getUsers(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return const Center(child: Text('Có lỗi xảy ra'));
+                  }
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(child: Text('Không có người dùng nào'));
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      final user = snapshot.data![index];
+                      return Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        elevation: 3,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          leading: CircleAvatar(
+                            radius: 28,
+                            backgroundColor: Colors.green[100],
+                            child: Icon(Icons.person, color: Colors.green[700], size: 32),
+                          ),
+                          title: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 18,
+                                  color: Color(0xFF222B45),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: user.role == UserRole.admin ? Colors.blue[100] : Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  user.role == UserRole.admin ? 'Quản trị viên' : 'Người dùng',
+                                  style: TextStyle(
+                                    color: user.role == UserRole.admin ? Colors.blue : Colors.black87,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              Text(
+                                user.email,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  color: Color(0xFF8F9BB3),
+                                ),
+                              ),
+                              if (user.phoneNumber != null && user.phoneNumber!.isNotEmpty)
+                                Text(
+                                  user.phoneNumber!,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    color: Color(0xFF8F9BB3),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                                tooltip: 'Sửa',
+                                onPressed: () => _showEditUserDialog(context, user),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.redAccent),
+                                tooltip: 'Xóa',
+                                onPressed: () => _showDeleteConfirmation(context, user.id),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -92,7 +161,7 @@ class UserListView extends StatelessWidget {
     final nameController = TextEditingController();
     final emailController = TextEditingController();
     final phoneNumberController = TextEditingController();
-    UserRole role = UserRole.restaurantOwner;
+    UserRole role = UserRole.customer;
 
     showDialog(
       context: context,
@@ -130,12 +199,16 @@ class UserListView extends StatelessWidget {
                 decoration: const InputDecoration(
                   labelText: 'Vai trò',
                 ),
-                items: UserRole.values.map((role) {
-                  return DropdownMenuItem(
-                    value: role,
-                    child: Text(role == UserRole.admin ? 'Quản trị viên' : 'Chủ nhà hàng'),
-                  );
-                }).toList(),
+                items: [
+                  DropdownMenuItem(
+                    value: UserRole.admin,
+                    child: Text('Quản trị viên'),
+                  ),
+                  DropdownMenuItem(
+                    value: UserRole.customer,
+                    child: Text('Người dùng'),
+                  ),
+                ],
                 onChanged: (value) {
                   if (value != null) {
                     role = value;
@@ -186,6 +259,7 @@ class UserListView extends StatelessWidget {
   void _showEditUserDialog(BuildContext context, UserModel user) {
     final nameController = TextEditingController(text: user.name);
     final emailController = TextEditingController(text: user.email);
+    UserRole role = user.role;
 
     showDialog(
       context: context,
@@ -209,6 +283,28 @@ class UserListView extends StatelessWidget {
                 ),
                 enabled: false, // Email không thể thay đổi
               ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<UserRole>(
+                value: role,
+                decoration: const InputDecoration(
+                  labelText: 'Vai trò',
+                ),
+                items: [
+                  DropdownMenuItem(
+                    value: UserRole.admin,
+                    child: Text('Quản trị viên'),
+                  ),
+                  DropdownMenuItem(
+                    value: UserRole.customer,
+                    child: Text('Người dùng'),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    role = value;
+                  }
+                },
+              ),
             ],
           ),
         ),
@@ -221,6 +317,7 @@ class UserListView extends StatelessWidget {
             onPressed: () async {
               final updatedUser = user.copyWith(
                 name: nameController.text,
+                role: role,
               );
               try {
                 await _userController.updateUser(updatedUser);

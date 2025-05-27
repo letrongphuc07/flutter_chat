@@ -7,12 +7,16 @@ import 'screens/home_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/admin/admin_dashboard.dart';
-import 'screens/restaurant/restaurant_dashboard.dart';
 import 'screens/customer/customer_home.dart';
+import 'views/customer/cart_view.dart';
+import 'views/customer/checkout_view.dart';
+import 'views/admin/order_list_view.dart';
+import 'models/admin/order_model.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp(
@@ -62,8 +66,21 @@ class MyApp extends StatelessWidget {
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
           '/admin': (context) => const AdminDashboard(),
-          '/restaurant': (context) => const RestaurantDashboard(),
-          '/customer': (context) => const CustomerHomeScreen(),
+          '/customer': (context) => const CustomerHome(),
+          '/customer/home': (context) => const CustomerHome(),
+          '/customer/cart': (context) => const CartView(),
+          '/customer/checkout': (context) => const CheckoutView(),
+          '/orders': (context) => const OrderListView(),
+        },
+        onGenerateRoute: (settings) {
+          if (settings.name == '/orders/edit') {
+            final order = settings.arguments as OrderModel;
+            return MaterialPageRoute(
+              builder: (context) => const OrderListView(),
+              settings: settings,
+            );
+          }
+          return null;
         },
       ),
     );

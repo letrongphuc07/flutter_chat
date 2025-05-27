@@ -12,7 +12,20 @@
           "package_name": "com.example.food_ordering_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "580149701786-no08jololnu4fea5k647s1187sgvlmki.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.food_ordering_app",
+            "certificate_hash": "51bd97213c2ffd65cb60bd3ecdb93c9fa939c0b1"
+          }
+        },
+        {
+          "client_id": "580149701786-1aeebag7qku4cadal0k59l60a7udstgs.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCDXqpYXaNIEAFLHqQE1HeCBB8-OSRmwjw"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "580149701786-1aeebag7qku4cadal0k59l60a7udstgs.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

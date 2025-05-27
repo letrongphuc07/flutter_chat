@@ -9,84 +9,158 @@ class RestaurantListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Danh sách nhà hàng',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: () => _showAddRestaurantDialog(context),
-                icon: const Icon(Icons.add),
-                label: const Text('Thêm nhà hàng'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: StreamBuilder<List<RestaurantModel>>(
-            stream: _restaurantController.getRestaurants(),
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return const Center(child: Text('Có lỗi xảy ra'));
-              }
-
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(child: Text('Chưa có nhà hàng nào'));
-              }
-
-              return ListView.builder(
-                itemCount: snapshot.data!.length,
-                itemBuilder: (context, index) {
-                  final restaurant = snapshot.data![index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      leading: restaurant.imageUrl != null
-                          ? CircleAvatar(
-                              backgroundImage: NetworkImage(restaurant.imageUrl!),
-                            )
-                          : const CircleAvatar(
-                              child: Icon(Icons.restaurant),
-                            ),
-                      title: Text(restaurant.name),
-                      subtitle: Text(restaurant.address),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () => _showEditRestaurantDialog(context, restaurant),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () => _showDeleteConfirmation(context, restaurant.id),
-                          ),
-                        ],
+    return Scaffold(
+      backgroundColor: const Color(0xFFF6F8FA),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Danh sách nhà hàng',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF222B45),
+                        letterSpacing: 0.5,
                       ),
                     ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => _showAddRestaurantDialog(context),
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    label: const Text('Thêm', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      elevation: 2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: StreamBuilder<List<RestaurantModel>>(
+                stream: _restaurantController.getRestaurants(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return const Center(child: Text('Có lỗi xảy ra'));
+                  }
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(child: Text('Chưa có nhà hàng nào'));
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      final restaurant = snapshot.data![index];
+                      return Opacity(
+                        opacity: restaurant.isActive ? 1.0 : 0.5,
+                        child: Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          elevation: 3,
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            leading: restaurant.imageUrl != null && restaurant.imageUrl!.isNotEmpty
+                                ? CircleAvatar(
+                                    radius: 28,
+                                    backgroundImage: NetworkImage(restaurant.imageUrl!),
+                                  )
+                                : CircleAvatar(
+                                    radius: 28,
+                                    backgroundColor: Colors.green[100],
+                                    child: Icon(Icons.restaurant, color: Colors.green[700], size: 32),
+                                  ),
+                            title: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    restaurant.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 18,
+                                      color: Color(0xFF222B45),
+                                    ),
+                                  ),
+                                ),
+                                if (!restaurant.isActive)
+                                  Container(
+                                    margin: const EdgeInsets.only(left: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red[100],
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Text(
+                                      'Ngừng hoạt động',
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  restaurant.address,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    color: Color(0xFF8F9BB3),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'ID Chủ nhà hàng: ${restaurant.ownerId}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFFB0B5C0),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                                  tooltip: 'Sửa',
+                                  onPressed: () => _showEditRestaurantDialog(context, restaurant),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                                  tooltip: 'Xóa',
+                                  onPressed: () => _showDeleteConfirmation(context, restaurant.id),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
-              );
-            },
-          ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 

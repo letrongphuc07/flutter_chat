@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
-import '../../models/user_model.dart';
+import '../../models/admin/user_model.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

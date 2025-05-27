@@ -1,177 +1,140 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get/get.dart';
 import '../../controllers/admin/order_controller.dart';
 import '../../models/admin/order_model.dart';
 
 class OrderListView extends StatelessWidget {
-  static final OrderController _orderController = OrderController();
-
   const OrderListView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.expand(
-      child: Column(
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              'Danh Sách Đơn Hàng',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          Expanded(
-            child: StreamBuilder<List<OrderModel>>(
-              stream: _orderController.getOrders(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text('Lỗi: ${snapshot.error}'),
-                  );
-                }
+    final OrderController controller = Get.put(OrderController());
 
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-
-                final orders = snapshot.data ?? [];
-                if (orders.isEmpty) {
-                  return const Center(
-                    child: Text('Chưa có đơn hàng nào'),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  itemCount: orders.length,
-                  itemBuilder: (context, index) {
-                    final order = orders[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        title: Text('Đơn hàng #${order.id.substring(0, 8)}'),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Nhà hàng: ${order.restaurantId}'),
-                            Text('Người dùng: ${order.userId}'),
-                            Text('Tổng tiền: ${order.totalAmount}đ'),
-                            Text('Trạng thái: ${order.status}'),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit),
-                              onPressed: () => _showEditOrderDialog(context, order),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () => _showDeleteOrderDialog(context, order),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Danh sách đơn hàng'),
       ),
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (controller.orders.isEmpty) {
+          return const Center(
+            child: Text('Không có đơn hàng nào'),
+          );
+        }
+
+        return ListView.builder(
+          itemCount: controller.orders.length,
+          itemBuilder: (context, index) {
+            final order = controller.orders[index];
+            return _buildOrderCard(order);
+          },
+        );
+      }),
     );
   }
 
-  void _showEditOrderDialog(BuildContext context, OrderModel order) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cập nhật trạng thái đơn hàng'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+  Widget _buildOrderCard(OrderModel order) {
+    return Card(
+      margin: const EdgeInsets.all(8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Đơn hàng #${order.id.substring(0, 8)}'),
-            const SizedBox(height: 16),
-            DropdownButton<String>(
-              value: order.status,
-              items: const [
-                DropdownMenuItem(
-                  value: 'pending',
-                  child: Text('Chờ xác nhận'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Đơn hàng #${order.orderId}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                DropdownMenuItem(
-                  value: 'confirmed',
-                  child: Text('Đã xác nhận'),
+                _buildStatusChip(order.status),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text('Ngày đặt: ${order.createdAt.toString()}'),
+            const SizedBox(height: 8),
+            const Text(
+              'Chi tiết đơn hàng:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            ...order.items.map((item) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('${item.name} x${item.quantity}'),
+                      Text('${item.price.toStringAsFixed(0)} VNĐ'),
+                    ],
+                  ),
+                )),
+            const Divider(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Tổng tiền:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                DropdownMenuItem(
-                  value: 'completed',
-                  child: Text('Hoàn thành'),
-                ),
-                DropdownMenuItem(
-                  value: 'cancelled',
-                  child: Text('Đã hủy'),
+                Text(
+                  '${order.totalAmount.toStringAsFixed(0)} VNĐ',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
                 ),
               ],
-              onChanged: (value) {
-                if (value != null) {
-                  _orderController.updateOrderStatus(order.id, value);
-                  Navigator.pop(context);
-                }
-              },
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
-          ),
-        ],
       ),
     );
   }
 
-  void _showDeleteOrderDialog(BuildContext context, OrderModel order) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xác nhận xóa'),
-        content: const Text('Bạn có chắc chắn muốn xóa đơn hàng này?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
-          TextButton(
-            onPressed: () async {
-              try {
-                await _orderController.deleteOrder(order.id);
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Đã xóa đơn hàng thành công')),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Lỗi khi xóa đơn hàng: $e')),
-                  );
-                }
-              }
-            },
-            child: const Text('Xóa'),
-          ),
-        ],
+  Widget _buildStatusChip(OrderStatus status) {
+    Color color;
+    String text;
+
+    switch (status) {
+      case OrderStatus.pending:
+        color = Colors.orange;
+        text = 'Chờ xác nhận';
+        break;
+      case OrderStatus.confirmed:
+        color = Colors.blue;
+        text = 'Đã xác nhận';
+        break;
+      case OrderStatus.preparing:
+        color = Colors.purple;
+        text = 'Đang chuẩn bị';
+        break;
+      case OrderStatus.ready:
+        color = Colors.green;
+        text = 'Sẵn sàng';
+        break;
+      case OrderStatus.delivered:
+        color = Colors.green[700]!;
+        text = 'Đã giao';
+        break;
+      case OrderStatus.cancelled:
+        color = Colors.red;
+        text = 'Đã hủy';
+        break;
+    }
+
+    return Chip(
+      label: Text(
+        text,
+        style: const TextStyle(color: Colors.white),
       ),
+      backgroundColor: color,
     );
   }
 } 

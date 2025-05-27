@@ -17,12 +17,12 @@ class DefaultFirebaseOptions {
       case TargetPlatform.windows:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
+              'you can reconfigure this by running the FlutterFire CLI again.',
         );
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
+              'you can reconfigure this by running the FlutterFire CLI again.',
         );
       default:
         throw UnsupportedError(
@@ -32,20 +32,20 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'YOUR-WEB-API-KEY',
-    appId: 'YOUR-WEB-APP-ID',
-    messagingSenderId: 'YOUR-SENDER-ID',
-    projectId: 'YOUR-PROJECT-ID',
-    authDomain: 'YOUR-AUTH-DOMAIN',
-    storageBucket: 'YOUR-STORAGE-BUCKET',
+    apiKey: 'AIzaSyCDXqpYXaNIEAFLHqQE1HeCBB8-OSRmwjw',
+    appId: '1:580149701786:android:1a1baddfb2c065947bc323',
+    messagingSenderId: '580149701786',
+    projectId: 'foodorderingapp-5b786',
+    authDomain: 'foodorderingapp-5b786.firebaseapp.com',
+    storageBucket: 'foodorderingapp-5b786.appspot.com', // Đã sửa lại đúng
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR-ANDROID-API-KEY',
-    appId: 'YOUR-ANDROID-APP-ID',
-    messagingSenderId: 'YOUR-SENDER-ID',
-    projectId: 'YOUR-PROJECT-ID',
-    storageBucket: 'YOUR-STORAGE-BUCKET',
+    apiKey: 'AIzaSyCDXqpYXaNIEAFLHqQE1HeCBB8-OSRmwjw',
+    appId: '1:580149701786:android:1a1baddfb2c065947bc323',
+    messagingSenderId: '580149701786',
+    projectId: 'foodorderingapp-5b786',
+    storageBucket: 'foodorderingapp-5b786.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -67,4 +67,4 @@ class DefaultFirebaseOptions {
     iosClientId: 'YOUR-MACOS-CLIENT-ID',
     iosBundleId: 'YOUR-MACOS-BUNDLE-ID',
   );
-} 
+}

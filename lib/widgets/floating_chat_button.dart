@@ -10,26 +10,40 @@ class FloatingChatButton extends StatefulWidget {
 
 class _FloatingChatButtonState extends State<FloatingChatButton> {
   bool _isExpanded = false;
+  bool _isLoading = false;
   final TextEditingController _messageController = TextEditingController();
   final List<Map<String, String>> _messages = [];
   final ScrollController _scrollController = ScrollController();
-  late final GeminiRestService _geminiRestService;
+  final GeminiRestService _geminiRestService = GeminiRestService();
 
   @override
   void initState() {
     super.initState();
-    _geminiRestService = GeminiRestService('AIzaSyAIQjTv_Yejb7pga5y8uD22unHWlDroUvE');
     _addWelcomeMessage();
   }
 
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   void _addWelcomeMessage() async {
-    final response = await _geminiRestService.generateContent("Xin chào, tôi muốn tư vấn món ăn!");
-    setState(() {
-      _messages.add({
-        'text': response,
-        'isUser': 'false',
+    try {
+      setState(() => _isLoading = true);
+      final response = await _geminiRestService.sendMessage("Xin chào, tôi muốn tư vấn món ăn!");
+      setState(() {
+        _messages.add({
+          'text': response,
+          'isUser': 'false',
+        });
       });
-    });
+    } catch (e) {
+      _showErrorSnackBar('Không thể kết nối với trợ lý. Vui lòng thử lại sau.');
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   void _sendMessage() async {
@@ -42,10 +56,11 @@ class _FloatingChatButtonState extends State<FloatingChatButton> {
         'isUser': 'true',
       });
       _messageController.clear();
+      _isLoading = true;
     });
 
     try {
-      final response = await _geminiRestService.generateContent(userMessage);
+      final response = await _geminiRestService.sendMessage(userMessage);
       setState(() {
         _messages.add({
           'text': response,
@@ -54,14 +69,30 @@ class _FloatingChatButtonState extends State<FloatingChatButton> {
       });
       _scrollToBottom();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: ${e.toString()}')),
-      );
+      _showErrorSnackBar(e.toString());
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'Đóng',
+          textColor: Colors.white,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
+      );
+  }
+
   void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
@@ -69,36 +100,31 @@ class _FloatingChatButtonState extends State<FloatingChatButton> {
           curve: Curves.easeOut,
         );
       }
-    });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: MediaQuery.of(context).size.width,
-      height: MediaQuery.of(context).size.height,
-      child: Stack(
+  Widget _buildMessageBubble(String text, bool isUser) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isUser ? Colors.blue : Colors.grey[200],
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (_isExpanded)
-            Container(
-              color: Colors.white,
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    _buildHeader(),
-                    Expanded(child: _buildMessageList()),
-                    _buildInputArea(),
-                  ],
-                ),
-              ),
-            ),
-          if (!_isExpanded)
-            Positioned(
-              right: 16,
-              bottom: 16,
-              child: FloatingActionButton(
-                onPressed: () => setState(() => _isExpanded = true),
-                child: const Icon(Icons.chat),
+          Text(
+            text,
+            style: TextStyle(
+              color: isUser ? Colors.white : Colors.black87,
+              fontSize: 14,
               ),
             ),
         ],
@@ -106,41 +132,78 @@ class _FloatingChatButtonState extends State<FloatingChatButton> {
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      right: 16,
+      bottom: 16,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          if (_isExpanded)
+            Container(
+              width: 320,
+              height: 450,
+              margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor,
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
           ),
         ],
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const CircleAvatar(
+                          backgroundColor: Colors.white,
+                          child: Icon(Icons.restaurant_menu, color: Colors.blue),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+                              Text(
             'Trợ lý ẩm thực',
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Luôn sẵn sàng tư vấn',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
             ),
           ),
           IconButton(
             icon: const Icon(Icons.close, color: Colors.white),
-            onPressed: () => setState(() => _isExpanded = false),
+                          onPressed: () {
+                            setState(() => _isExpanded = false);
+                          },
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildMessageList() {
-    return ListView.builder(
+                  ),
+                  Expanded(
+                    child: ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
       itemCount: _messages.length,
@@ -149,67 +212,70 @@ class _FloatingChatButtonState extends State<FloatingChatButton> {
         final isUser = message['isUser'] == 'true';
         return Align(
           alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isUser ? Theme.of(context).primaryColor : Colors.grey[200],
-              borderRadius: BorderRadius.circular(12),
+                          child: _buildMessageBubble(message['text']!, isUser),
+                        );
+                      },
             ),
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.75,
+                  ),
+                  if (_isLoading)
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: CircularProgressIndicator(),
             ),
-            child: Text(
-              message['text']!,
-              style: TextStyle(
-                color: isUser ? Colors.white : Colors.black,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildInputArea() {
-    return Container(
-      padding: const EdgeInsets.all(8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+                      color: Colors.grey[50],
+                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                      border: Border(
+                        top: BorderSide(color: Colors.grey[200]!),
           ),
-        ],
       ),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: _messageController,
-              decoration: const InputDecoration(
+                            decoration: InputDecoration(
                 hintText: 'Nhập tin nhắn...',
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                              hintStyle: TextStyle(color: Colors.grey[400]),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
               onSubmitted: (_) => _sendMessage(),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.send),
+                        const SizedBox(width: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.send, color: Colors.white),
             onPressed: _sendMessage,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          FloatingActionButton(
+            onPressed: () {
+              setState(() => _isExpanded = !_isExpanded);
+            },
+            backgroundColor: Colors.blue,
+            child: Icon(_isExpanded ? Icons.close : Icons.restaurant_menu),
           ),
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _messageController.dispose();
-    _scrollController.dispose();
-    super.dispose();
   }
 } 

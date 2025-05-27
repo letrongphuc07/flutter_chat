@@ -17,7 +17,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = "17"
     }
 
     defaultConfig {
@@ -33,16 +33,25 @@ android {
     }
 
     buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+        debug {
             signingConfig = signingConfigs.getByName("debug")
         }
+        release {
+            signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
+    lint {
+        disable += "InvalidPackage"
     }
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain {
+        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(17))
+    }
 }
 
 flutter {
@@ -54,5 +63,10 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-appcheck-playintegrity")
+    implementation("com.google.firebase:firebase-appcheck-debug")
+    implementation("com.google.android.gms:play-services-safetynet:18.0.1")
     implementation("com.android.support:multidex:1.0.3")
+    implementation("com.google.android.play:core:1.10.3")
+    implementation("com.google.android.play:core-ktx:1.8.1")
 }

@@ -3,6 +3,8 @@ import '../../services/auth_service.dart';
 import '../../views/admin/order_list_view.dart';
 import '../../views/admin/restaurant_list_view.dart';
 import '../../views/admin/user_list_view.dart';
+import '../../views/admin/menu_list_view.dart';
+
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -39,7 +41,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             children: [
               _buildOverviewTab(),
               const RestaurantListView(),
-              const UserListView(),
+              UserListView(),
             ],
           ),
         ),
@@ -94,8 +96,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
           const SizedBox(height: 16),
           SizedBox(
-            height: 400, // Fixed height for the order list
-            child: const OrderListView(),
+            //height: 400,
+            //child: OrderListView(),
           ),
         ],
       ),
@@ -117,84 +119,120 @@ class _AdminDashboardState extends State<AdminDashboard> {
           Icons.people,
           Colors.blue,
           _getStreamForTitle('users'),
+          onTap: () {
+            setState(() {
+              _selectedIndex = 2; // Chuyển đến tab Người dùng
+            });
+          },
         ),
         _buildStatCard(
           'Tổng Nhà Hàng',
           Icons.restaurant,
           Colors.green,
           _getStreamForTitle('restaurants'),
+          onTap: () {
+            setState(() {
+              _selectedIndex = 1; // Chuyển đến tab Nhà hàng
+            });
+          },
         ),
         _buildStatCard(
           'Tổng Đơn Hàng',
           Icons.shopping_cart,
           Colors.orange,
           _getStreamForTitle('orders'),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ManagementScreen(
+                  title: 'Quản Lý Đơn Hàng',
+                  child: OrderListView(),
+                ),
+              ),
+            );
+          },
         ),
         _buildStatCard(
-          'Đơn Hàng Hôm Nay',
-          Icons.today,
+          'Quản Lý Thực Đơn',
+          Icons.restaurant_menu,
           Colors.purple,
-          _getStreamForTitle('today_orders'),
+          _getStreamForTitle('menu_items'),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ManagementScreen(
+                  title: 'Quản Lý Thực Đơn',
+                  child: MenuListView(),
+                ),
+              ),
+            );
+          },
         ),
       ],
     );
   }
 
   Widget _buildStatCard(
-    String title,
-    IconData icon,
-    Color color,
-    Stream<int> stream,
-  ) {
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 28,
-              color: color,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+      String title,
+      IconData icon,
+      Color color,
+      Stream<int> stream, {
+        VoidCallback? onTap,
+      }) {
+    return InkWell(
+      onTap: onTap,
+      child: Card(
+        elevation: 4,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 28,
+                color: color,
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            StreamBuilder<int>(
-              stream: stream,
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return const Text('Lỗi', style: TextStyle(fontSize: 12));
-                }
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+              const SizedBox(height: 4),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              StreamBuilder<int>(
+                stream: stream,
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return const Text('Lỗi', style: TextStyle(fontSize: 12));
+                  }
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    );
+                  }
+                  return Text(
+                    '${snapshot.data ?? 0}',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
                   );
-                }
-                return Text(
-                  '${snapshot.data ?? 0}',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-                );
-              },
-            ),
-          ],
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -208,10 +246,31 @@ class _AdminDashboardState extends State<AdminDashboard> {
         return _authService.getRestaurantCount();
       case 'orders':
         return _authService.getOrderCount();
-      case 'today_orders':
-        return _authService.getTodayOrderCount();
+      case 'menu_items':
+        return _authService.getMenuCount();
       default:
         return Stream.value(0);
     }
   }
-} 
+}
+
+class ManagementScreen extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const ManagementScreen({
+    super.key,
+    required this.title,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: child,
+    );
+  }
+}

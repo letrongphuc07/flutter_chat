@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import '../../models/admin/order_model.dart';
 import '../../services/order_service.dart';
+import 'dart:async';
 
 class OrderController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -9,11 +10,34 @@ class OrderController extends GetxController {
   final RxList<OrderModel> orders = <OrderModel>[].obs;
   final RxBool isLoading = false.obs;
   final OrderService _orderService = OrderService();
+  late StreamSubscription<List<OrderModel>> _orderSubscription;
 
   @override
   void onInit() {
     super.onInit();
-    loadOrders();
+    _orderSubscription = _orderService.getOrdersStream().listen(
+      (loadedOrders) {
+        print('Orders stream received: $loadedOrders.length orders');
+        orders.value = loadedOrders;
+        isLoading.value = false; // Stop loading when data is received
+      },
+      onError: (error) {
+        print('Error listening to orders stream: $error');
+        isLoading.value = false; // Stop loading on error
+        Get.snackbar(
+          'Lỗi',
+          'Không thể tải danh sách đơn hàng theo thời gian thực',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      },
+    );
+    isLoading.value = true; // Start loading when subscribing
+  }
+
+  @override
+  void onClose() {
+    _orderSubscription.cancel(); // Cancel the subscription
+    super.onClose();
   }
 
   Future<void> loadOrders() async {

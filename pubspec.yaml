@@ -37,9 +37,9 @@ dependencies:
   firebase_core: ^2.32.0
   firebase_auth: ^4.16.0
   cloud_firestore: ^4.14.0
+  google_generative_ai: ^0.2.3
   provider: ^6.1.1
   firebase_storage: ^11.6.6
-  google_generative_ai: ^0.2.3
   http: ^1.1.0
   get: ^4.6.6
   intl: ^0.20.2

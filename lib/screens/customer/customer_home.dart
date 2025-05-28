@@ -6,6 +6,9 @@ import '../../controllers/cart_controller.dart';
 import '../../models/admin/menu_item_model.dart';
 import 'food_detail_screen.dart';
 import 'dart:async';
+import '../../services/order_service.dart';
+import '../../models/admin/order_model.dart';
+import 'order_notification_screen.dart';
 
 class CustomerHome extends StatefulWidget {
   const CustomerHome({super.key});
@@ -136,6 +139,51 @@ class _CustomerHomeState extends State<CustomerHome> {
                                 icon: const Icon(Icons.shopping_cart, color: Colors.white),
                                 onPressed: () {
                                   Navigator.pushNamed(context, '/customer/cart');
+                                },
+                              ),
+                              // Nút thông báo đơn hàng
+                              StreamBuilder<List<OrderModel>>(
+                                stream: OrderService().getOrdersStream().map((orders) =>
+                                    orders.where((order) =>
+                                        order.userId == _authService.currentUser!.uid &&
+                                        (order.status == OrderStatus.confirmed || order.status == OrderStatus.cancelled))
+                                        .toList()),
+                                builder: (context, snapshot) {
+                                  final newOrdersCount = snapshot.data?.length ?? 0;
+                                  return Stack(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.notifications, color: Colors.white),
+                                        onPressed: () {
+                                          Navigator.push(context, MaterialPageRoute(builder: (context) => const OrderNotificationScreen()));
+                                        },
+                                      ),
+                                      if (newOrdersCount > 0)
+                                        Positioned(
+                                          right: 11,
+                                          top: 11,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red,
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            constraints: const BoxConstraints(
+                                              minWidth: 14,
+                                              minHeight: 14,
+                                            ),
+                                            child: Text(
+                                              '$newOrdersCount',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 8,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  );
                                 },
                               ),
                               IconButton(

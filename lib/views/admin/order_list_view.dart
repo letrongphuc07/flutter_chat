@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/admin/order_controller.dart';
 import '../../models/admin/order_model.dart';
+import 'package:intl/intl.dart';
+import '../../services/order_service.dart';
 
 class OrderListView extends StatelessWidget {
   const OrderListView({super.key});
@@ -36,6 +38,9 @@ class OrderListView extends StatelessWidget {
   }
 
   Widget _buildOrderCard(OrderModel order) {
+    final OrderService orderService = OrderService();
+    final OrderController orderController = Get.find();
+
     return Card(
       margin: const EdgeInsets.all(8),
       child: Padding(
@@ -53,10 +58,17 @@ class OrderListView extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                Text(
+                  order.statusText,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: order.statusColor,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
-            Text('Ngày đặt: ${order.createdAt.toString()}'),
+            Text('Ngày đặt: ${DateFormat('yyyy-MM-dd HH:mm').format(order.createdAt)}'),
             const SizedBox(height: 8),
             const Text(
               'Chi tiết đơn hàng:',
@@ -94,6 +106,35 @@ class OrderListView extends StatelessWidget {
                     color: Colors.green,
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (order.status == OrderStatus.pending)
+                  ElevatedButton(
+                    onPressed: () async {
+                      await orderController.updateOrderStatus(order.orderId, OrderStatus.confirmed);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Xác nhận'),
+                  ),
+                const SizedBox(width: 8),
+                if (order.status == OrderStatus.pending)
+                  OutlinedButton(
+                    onPressed: () async {
+                      await orderController.updateOrderStatus(order.orderId, OrderStatus.cancelled);
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                    ),
+                    child: const Text('Hủy'),
+                  ),
               ],
             ),
           ],

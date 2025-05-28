@@ -5,9 +5,9 @@ import 'dart:async';
 
 
 class GeminiRestService {
-  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
   // TODO: Move this to a secure configuration file or environment variable
-  static const String _apiKey = 'AIzaSyDErDVclH9Fs_KrYglpypqktVihbwJVgZA';
+  static const String _apiKey = 'AIzaSyAvUfQrY-0O90J3IpkErP4WNBiIRZbcpug';
 
   // Hệ thống prompt để định hướng AI trở thành trợ lý ẩm thực
   static const String _systemPrompt = '''

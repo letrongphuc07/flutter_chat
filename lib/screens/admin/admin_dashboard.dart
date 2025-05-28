@@ -4,6 +4,8 @@ import '../../views/admin/order_list_view.dart';
 import '../../views/admin/restaurant_list_view.dart';
 import '../../views/admin/user_list_view.dart';
 import '../../views/admin/menu_list_view.dart';
+import '../../services/order_service.dart';
+import '../../models/admin/order_model.dart';
 
 
 class AdminDashboard extends StatefulWidget {
@@ -95,9 +97,57 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            //height: 400,
-            //child: OrderListView(),
+          StreamBuilder<List<OrderModel>>(
+            stream: OrderService().getOrdersStream(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return const Center(child: Text('Có lỗi xảy ra'));
+              }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text('Không có đơn hàng nào'));
+              }
+
+              final orders = snapshot.data!.take(5).toList(); // Chỉ hiển thị 5 đơn hàng gần nhất
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: orders.length,
+                itemBuilder: (context, index) {
+                  final order = orders[index];
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      title: Text('Đơn hàng #${order.orderId}'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Khách hàng: ${order.customerName}'),
+                          Text('Tổng tiền: ${order.totalAmount.toStringAsFixed(0)} VNĐ'),
+                          Text('Trạng thái: ${_getStatusText(order.status)}'),
+                        ],
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.arrow_forward_ios),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ManagementScreen(
+                                title: 'Chi tiết đơn hàng',
+                                child: OrderListView(),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
           ),
         ],
       ),
@@ -250,6 +300,25 @@ class _AdminDashboardState extends State<AdminDashboard> {
         return _authService.getMenuCount();
       default:
         return Stream.value(0);
+    }
+  }
+
+  String _getStatusText(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.pending:
+        return 'Chờ xác nhận';
+      case OrderStatus.confirmed:
+        return 'Đã xác nhận';
+      case OrderStatus.preparing:
+        return 'Đang chuẩn bị';
+      case OrderStatus.ready:
+        return 'Sẵn sàng';
+      case OrderStatus.delivered:
+        return 'Đã giao';
+      case OrderStatus.cancelled:
+        return 'Đã hủy';
+      default:
+        return 'Không xác định';
     }
   }
 }

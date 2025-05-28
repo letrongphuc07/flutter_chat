@@ -386,13 +386,13 @@ class _CustomerHomeState extends State<CustomerHome> {
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               child: Image.asset(
                 _getAssetImageForMenu(menuItem.name),
-                height: 100,
+                height: 80,
                 width: double.infinity,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   print('Error loading menu item image: $error');
                   return Container(
-                    height: 100,
+                    height: 80,
                     width: double.infinity,
                     color: Colors.grey[300],
                     child: const Icon(
@@ -404,54 +404,43 @@ class _CustomerHomeState extends State<CustomerHome> {
                 },
               ),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      menuItem.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    menuItem.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      menuItem.description,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const Spacer(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${menuItem.price.toStringAsFixed(0)} VNĐ',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${menuItem.price.toStringAsFixed(0)} VNĐ',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.add_shopping_cart),
-                          onPressed: _isLoading ? null : () async {
-                            await _addToCart(menuItem);
-                          },
-                          color: Colors.blue,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add_shopping_cart),
+                        onPressed: _isLoading ? null : () async {
+                          await _addToCart(menuItem);
+                        },
+                        color: Colors.blue,
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],

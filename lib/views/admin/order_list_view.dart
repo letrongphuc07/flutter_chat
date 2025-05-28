@@ -12,7 +12,6 @@ class OrderListView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Danh sách đơn hàng'),
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
@@ -54,7 +53,6 @@ class OrderListView extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                _buildStatusChip(order.status),
               ],
             ),
             const SizedBox(height: 8),
@@ -66,15 +64,21 @@ class OrderListView extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             ...order.items.map((item) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('${item.name} x${item.quantity}'),
-                      Text('${item.price.toStringAsFixed(0)} VNĐ'),
-                    ],
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${item.name} x${item.quantity}',
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                )),
+                  const SizedBox(width: 8),
+                  Text('${item.price.toStringAsFixed(0)} VNĐ'),
+                ],
+              ),
+            )),
             const Divider(),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -95,46 +99,6 @@ class OrderListView extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildStatusChip(OrderStatus status) {
-    Color color;
-    String text;
-
-    switch (status) {
-      case OrderStatus.pending:
-        color = Colors.orange;
-        text = 'Chờ xác nhận';
-        break;
-      case OrderStatus.confirmed:
-        color = Colors.blue;
-        text = 'Đã xác nhận';
-        break;
-      case OrderStatus.preparing:
-        color = Colors.purple;
-        text = 'Đang chuẩn bị';
-        break;
-      case OrderStatus.ready:
-        color = Colors.green;
-        text = 'Sẵn sàng';
-        break;
-      case OrderStatus.delivered:
-        color = Colors.green[700]!;
-        text = 'Đã giao';
-        break;
-      case OrderStatus.cancelled:
-        color = Colors.red;
-        text = 'Đã hủy';
-        break;
-    }
-
-    return Chip(
-      label: Text(
-        text,
-        style: const TextStyle(color: Colors.white),
-      ),
-      backgroundColor: color,
     );
   }
 } 

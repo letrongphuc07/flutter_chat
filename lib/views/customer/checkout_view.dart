@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../controllers/cart_controller.dart';
 import '../../models/cart_model.dart';
 import '../../services/auth_service.dart';
+import '../../services/order_service.dart';
+import '../../models/admin/order_model.dart';
 
 class CheckoutView extends StatefulWidget {
   const CheckoutView({super.key});
@@ -13,12 +15,14 @@ class CheckoutView extends StatefulWidget {
 class _CheckoutViewState extends State<CheckoutView> {
   final CartController _cartController = CartController();
   final AuthService _authService = AuthService();
+  final OrderService _orderService = OrderService();
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
   final _noteController = TextEditingController();
   String _selectedPaymentMethod = 'cash';
+  bool _isProcessing = false;
 
   @override
   Widget build(BuildContext context) {
@@ -217,20 +221,7 @@ class _CheckoutViewState extends State<CheckoutView> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          // TODO: Implement order creation and payment processing
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Đặt hàng thành công'),
-                            ),
-                          );
-                          await _cartController.clearCart(user.uid);
-                          if (mounted) {
-                            Navigator.pushReplacementNamed(context, '/customer/home');
-                          }
-                        }
-                      },
+                      onPressed: _isProcessing ? null : () => _processOrder(cart),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         backgroundColor: Colors.blue,
@@ -239,13 +230,22 @@ class _CheckoutViewState extends State<CheckoutView> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        'Đặt hàng',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: _isProcessing
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              'Đặt hàng',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -255,6 +255,68 @@ class _CheckoutViewState extends State<CheckoutView> {
         },
       ),
     );
+  }
+
+  Future<void> _processOrder(CartModel cart) async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isProcessing = true;
+      });
+
+      try {
+        final user = _authService.currentUser;
+        if (user == null) throw Exception('Người dùng chưa đăng nhập');
+
+        // Chuyển đổi cart items thành order items
+        final orderItems = cart.items.map((item) => OrderItem(
+          menuItemId: item.menuItemId,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+        )).toList();
+
+        // Tạo đơn hàng mới
+        await _orderService.createOrder(
+          userId: user.uid,
+          restaurantId: 'restaurant_id', // Thay thế bằng ID nhà hàng thực tế
+          items: orderItems,
+          totalAmount: cart.totalPrice,
+          customerName: _nameController.text,
+          customerPhone: _phoneController.text,
+          deliveryAddress: _addressController.text,
+          note: _noteController.text,
+          paymentMethod: _selectedPaymentMethod,
+        );
+
+        // Xóa giỏ hàng
+        await _cartController.clearCart(user.uid);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đặt hàng thành công'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pushReplacementNamed(context, '/customer/home');
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+          });
+        }
+      }
+    }
   }
 
   @override
